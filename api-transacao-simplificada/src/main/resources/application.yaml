@@ -1,3 +1,22 @@
 spring:
   application:
     name: api-transacao-simplificada
+  datasource:
+    url: jdbc:postgresql://localhost:5433/bd-api-transacaosimplificada
+    username: coti
+    password: Coti@2026
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    show-sql: true
+
+    properties:
+      hibernate:
+        JDBC:
+          lob:
+            non_contextual_creation: true
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
