@@ -6,19 +6,17 @@ import com.ppay.apitransacaosimplificada.entities.Transacao;
 import com.ppay.apitransacaosimplificada.entities.Usuario;
 import com.ppay.apitransacaosimplificada.enums.TipoUsuario;
 import com.ppay.apitransacaosimplificada.exceptions.BadRequestException;
-import com.ppay.apitransacaosimplificada.infraestructure.clients.NotificacaoClient;
 import com.ppay.apitransacaosimplificada.reporitories.TransacaoRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
-import java.beans.Transient;
 import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
-public class TransferenciaService {
+public class TransacaoService {
 
     private final UsuarioService usuarioService;
     private final AutorizacaoService autorizacaoService;
