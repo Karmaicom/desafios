@@ -12,6 +12,7 @@ API REST desenvolvida em Java com Spring Boot para simular transferencias financ
 - [Como executar](#como-executar)
 - [Documentacao da API](#documentacao-da-api)
 - [Endpoint principal](#endpoint-principal)
+- [Tratamento de erros](#tratamento-de-erros)
 - [Dados iniciais](#dados-iniciais)
 - [Banco de dados](#banco-de-dados)
 - [Testes](#testes)
@@ -34,6 +35,7 @@ O codigo esta no diretorio `api-transacao-simplificada` deste repositorio.
 - Atualizar saldo do pagador e do recebedor.
 - Persistir o historico da transacao.
 - Enviar notificacao apos a transferencia.
+- Padronizar respostas de erro com um tratamento global de excecoes.
 - Popular usuarios e carteiras iniciais ao subir a aplicacao.
 - Expor documentacao interativa via Swagger/OpenAPI.
 
@@ -65,15 +67,15 @@ Organizacao principal dos pacotes:
 
 ```text
 src/main/java/com/ppay/apitransacaosimplificada
-├── configurations   # Configuracoes da aplicacao, Swagger e carga inicial
-├── controllers      # Controllers REST
-├── dtos             # Objetos de entrada e saida
-├── entities         # Entidades JPA
-├── enums            # Enums do dominio
-├── exceptions       # Excecoes customizadas
-├── infraestructure  # Clientes Feign para servicos externos
-├── reporitories     # Repositorios Spring Data JPA
-└── services         # Regras de negocio
+|-- configurations   # Configuracoes da aplicacao, Swagger e carga inicial
+|-- controllers      # Controllers REST
+|-- dtos             # Objetos de entrada e saida
+|-- entities         # Entidades JPA
+|-- enums            # Enums do dominio
+|-- exceptions       # Excecoes customizadas e handler global
+|-- infraestructure  # Clientes Feign para servicos externos
+|-- reporitories     # Repositorios Spring Data JPA
+`-- services         # Regras de negocio
 ```
 
 Fluxo resumido da transferencia:
@@ -90,6 +92,8 @@ POST /transfer
   -> TransacaoRepository salva transacao
   -> NotificacaoService envia notificacao
 ```
+
+As excecoes da aplicacao sao centralizadas em `GlobalExceptionHandler`, que usa `@ControllerAdvice` para converter falhas conhecidas em respostas HTTP padronizadas.
 
 ## Como executar
 
@@ -178,6 +182,13 @@ Resposta esperada em caso de aceite:
 202 Accepted
 ```
 
+Possiveis respostas de erro:
+
+| Status | Quando ocorre | Corpo da resposta |
+| --- | --- | --- |
+| `400 Bad Request` | Pagador lojista, saldo insuficiente, transferencia nao autorizada ou falha na notificacao | `Erro: <mensagem>` |
+| `404 Not Found` | Pagador ou recebedor nao encontrado | `Erro: <mensagem>` |
+
 Exemplo com cURL:
 
 ```bash
@@ -194,6 +205,31 @@ Invoke-RestMethod `
   -Uri "http://localhost:8080/transfer" `
   -ContentType "application/json" `
   -Body '{"value":100.00,"payer":1,"payee":2}'
+```
+
+## Tratamento de erros
+
+A aplicacao possui um handler global de excecoes em `exceptions/GlobalExceptionHandler.java`. Ele captura excecoes lancadas pelas camadas de servico e retorna mensagens simples no formato:
+
+```text
+Erro: <mensagem da excecao>
+```
+
+Mapeamentos atuais:
+
+| Excecao | Status HTTP |
+| --- | --- |
+| `IllegalArgumentException` | `400 Bad Request` |
+| `BadRequestException` | `400 Bad Request` |
+| `UserNotFoundException` | `404 Not Found` |
+
+Exemplo de resposta ao tentar transferir usando um usuario lojista como pagador:
+
+```http
+HTTP/1.1 400 Bad Request
+Content-Type: text/plain
+
+Erro: Erro ao validar o tipo de usuario: Usuario do tipo lojista nao pode realizar transferencias
 ```
 
 ## Dados iniciais
